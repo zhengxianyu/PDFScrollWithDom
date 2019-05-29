@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		<style>
+			.right-part {
+				max-height: 91vh;
+				overflow-y: scroll;
+			}
+			.right {
+				width: 85%;
+			float: right;
+			word-wrap: break-word;
+			}
+
+			#pdf-container {
+				width: 50%;
+				float: left;
+				max-height: 91vh;
+				overflow: auto;
+			}
+		</style>
+		<title>投行门户</title>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.2.2/pdf.js"></script>
+  </head>
+  <body>
+		<div id="pdf-container"></div>
+		<div class="right-part">
+			<div class="right"></div>
+		</div>
+		<script id="script">
+			const right = document.querySelector('.right')
+			let s2 = ''
+			for(let i = 0; i < 69; i++) {
+				if (i % 2 === 0) {
+					s2 += '<h>'+ i + i + i +'</h><br>njkmjkkhg<br>'
+				} else {
+					s2 += '<h>'+ i + i + i +'</h><br>njkmjkkhgshdsfhdksdghjsfjsdfgjhsdnjkmjkkhgshdsfhdksdghjsfjsdfgjhsdnjkmjkkhgshdsfhdksdghjsfjsdfgjhsdnjkmjkkhgshdsfhdksdghjsfjsdfgjhsdnjkmjkkhgshdsfhdksdghjsfjsdfgjhsdnjkmjkkhgshdsfhdksdghjsfjsdfgjhsdnjkmjkkhgshdsfhdksdghjsfjsdfgjhsdnjkmjkkhgshdsfhdksdghjsfjsdfgjhsdnjkmjkkhgshdsfhdksdghjsfjsdfgjhsdnjkmjkkhgshdsfhdksdghjsfjsdfgjhsdnjkmjkkhgshdsfhdksdghjsfjsdfgjhsdnjkmjkkhgshdsfhdksdghjsfjsdfgjhsdnjkmjkkhgshdsfhdksdghjsfjsdfgjhsdnjkmjkkhgshdsfhdksdghjsfjsdfgjhsdnjkmjkkhgshdsfhdksdghjsfjsdfgjhsdnjkmjkkhgshdsfhdksdghjsfjsdfgjhsd<br>'
+				}
+      }
+      right.innerHTML = s2
+
+			var url = 'http://0.0.0.0:8080/otacdn/site/assets/pdf/vivien.pdf';
+			pdfjsLib.GlobalWorkerOptions.workerSrc =
+				'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.2.2/pdf.worker.js';
+
+			function createPdfContainer(id, className) {
+        var pdfContainer = document.getElementById('pdf-container');
+        var canvasNew = document.createElement('canvas');
+        canvasNew.id = id;
+        canvasNew.className = className;
+        pdfContainer.appendChild(canvasNew);
+      };
+
+      function renderPDF(pdf, i, id, pageNum) {
+        pdf.getPage(i).then(function (page) {
+					var scale = 0.9;
+					var viewport = page.getViewport(scale);
+					var canvas = document.getElementById(id);
+					var context = canvas.getContext('2d');
+					canvas.height = viewport.height;
+					canvas.width = viewport.width;
+
+					var renderContext = {
+						canvasContext: context,
+						viewport: viewport
+					};
+					page.render(renderContext);
+
+					if (i == 1) {
+						let hs = document.getElementsByTagName('h');
+						let rightPageHeightList = {};
+						let rightScrollHeightList = [];
+						for (let j = 0; j < pageNum - 1; j++) {
+							let nextOffsetTop = hs[j + 1].offsetTop
+							let thisOffTop = hs[j].offsetTop
+							rightPageHeightList[j] = nextOffsetTop - thisOffTop;
+							if (j == 0) {
+								rightScrollHeightList[j] = rightPageHeightList[j];
+							} else {
+								rightScrollHeightList[j] = rightPageHeightList[j] + rightScrollHeightList[j - 1];
+							}
+						}
+
+						let canvasHeight = viewport.height * pageNum;
+						const l = document.querySelector('#pdf-container')
+						const r = document.querySelector('.right-part')
+						const rc = r.querySelector('.right')
+						let currentTab = 0;				
+
+						l.addEventListener('scroll', () => {
+							let pageAt = parseInt(l.scrollTop / viewport.height);
+							let rightScrollPageTop = 0
+							for (const page in rightPageHeightList) {
+								if (page < pageAt) {
+									rightScrollPageTop += rightPageHeightList[page]
+								}
+							}
+
+							if (pageAt < pageNum - 1) {
+								// 左边pdf一页的高度和右边一个dom的高度比
+								let scale = viewport.height / rightPageHeightList[pageAt]
+								// 左边滚动距离当前页顶点的高度
+								let leftScrollPage = l.scrollTop % viewport.height
+								// 右边滑动dom块滑动的高度
+								let rightPageTop = leftScrollPage / scale
+
+								if (currentTab !== 1) return
+								// 右边总共滑动的高度
+								r.scrollTop = rightScrollPageTop + rightPageTop
+							}
+						})
+
+						r.addEventListener('scroll', () => {
+							let pageAt = 0;
+							for (let i = 0; i < rightScrollHeightList.length; i++) {
+								if (rightScrollHeightList[i] > r.scrollTop) {
+									pageAt = i;
+									break;
+								}
+							}
+							console.log("==pageAt::", pageAt)
+							let leftScrollPageTop = viewport.height * pageAt;
+
+							let scale = viewport.height / rightPageHeightList[pageAt]
+							// 左边滚动距离当前页顶点的高度
+							let rightScrollPage = r.scrollTop % rightPageHeightList[pageAt]
+							// 右边滑动dom块滑动的高度
+							let leftPageTop = rightScrollPage * scale
+							
+							if (currentTab !== 2) return
+							l.scrollTop = leftScrollPageTop + leftPageTop
+						})
+
+						l.addEventListener('mouseover', ()=>{
+							currentTab = 1
+						})
+						r.addEventListener('mouseover', ()=>{
+							currentTab = 2
+						})
+					}
+						
+				});
+		  };
+
+      function createSeriesCanvas(num, template) {
+        var id = '';
+        for (var j = 1; j <= num; j++) {
+					id = template + j;
+					createPdfContainer(id, 'pdfClass');
+        }
+      }
+
+      function loadPDF(fileURL) {
+		  	pdfjsLib.getDocument(fileURL).then(function (pdf) {
+					var id = '';
+					var idTemplate = 'cw-pdf-';
+					var pageNum = pdf.numPages;
+					createSeriesCanvas(pageNum, idTemplate);
+					for (var i = 1; i <= pageNum; i++) {
+						id = idTemplate + i;
+						renderPDF(pdf, i, id, pageNum);
+					}
+				});
+	  	}
+		  loadPDF(url);
+		</script>	
+		<hr>
+  </body>
+</html>
